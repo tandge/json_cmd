@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-05-08
+
+### Added
+
+#### 跨平台构建支持
+
+- 新增 MinGW-w64 交叉编译工具链文件 `toolchain-mingw64.cmake`，支持在 Linux 上编译 Windows 64bit 二进制文件
+- CMakeLists.txt 支持通过 `-Darch=lin64` 或 `-Darch=win64` 参数指定编译目标平台
+- 不指定 `arch` 时自动根据工具链推断平台（Linux 原生编译为 lin64，MinGW 交叉编译为 win64）
+- `arch` 参数非法值时给出明确错误提示
+- 构建产物带平台标记（`json_cmd_lin64` / `json_cmd_win64.exe`），避免跨平台构建时互相覆盖
+- Windows 版本采用静态链接（`-static -static-libgcc -static-libstdc++`），无需额外运行时 DLL
+
+#### 跨平台单元测试
+
+- Windows 单元测试通过 wine 在 Linux 宿主上运行，ctest 自动检测并使用 wine
+- `build.sh` 支持三种调用方式：`./build.sh`（双平台）、`./build.sh lin64`（仅 Linux）、`./build.sh win64`（仅 Windows）
+
+### Changed
+
+- `build.sh` 从单一 Linux 构建扩展为可按平台选择的双平台构建 + 测试流程
+- 构建目录结构改为 `build/lin64/` 和 `build/win64/` 分平台存放
+- CMakeLists.txt 中 `enable_testing()` 移至 FetchContent 之前，确保 ctest 可用
+- README.md 按照"简介 → 运行环境 → 编译构建 → 使用方式 → 下载发行版 → 常见问题"大纲重新组织，补充运行环境、退出码、FAQ 等细节
+
+[0.2.0]: https://github.com/tandge/json_cmd_tool/releases/tag/v0.2.0
+
 ## [0.1.0] - 2026-04-30
 
 ### Added
