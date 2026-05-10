@@ -1,0 +1,9 @@
+{
+    "name": "app",
+    "version": 2.1,
+    "debug": false,
+    "database": {
+        "host": "localhost",
+        "ports": [8080, 8081]
+    },
+}
