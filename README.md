@@ -4,7 +4,7 @@
 
 ## 简介
 
-json_cmd_tool 是一个轻量级命令行 JSON 键值对遍历工具，支持 Linux / Windows 跨平台编译与运行。
+json_cmd_tool 是一个轻量级命令行 JSON 处理工具，支持 Linux / Windows 跨平台编译与运行。
 
 将指定 JSON 文件中的所有叶节点以 `路径 = 值` 的形式打印输出，方便快速查看和检索 JSON 配置内容。核心功能：
 
@@ -13,6 +13,12 @@ json_cmd_tool 是一个轻量级命令行 JSON 键值对遍历工具，支持 Li
 - 数组索引使用 `[n]` 语法，对象路径使用 `.` 分隔符，层级清晰
 - 整数输出不带小数点，浮点数自动去尾零
 - 解析错误输出行号与列号信息
+- 校验模式：仅检查 JSON 合法性
+- 压缩模式：输出单行紧凑 JSON
+- 格式化模式：按缩进重新格式化输出
+- 原样输出：直接打印文件原始内容
+- key 排序：输出时对对象 key 按字典序排序
+- key 过滤：支持通配符 `*` 和 `?` 按模式筛选 key
 
 ### 示例
 
@@ -39,6 +45,37 @@ debug = false
 database.host = "localhost"
 database.ports[0] = 8080
 database.ports[1] = 8081
+```
+
+更多用法示例：
+
+```bash
+# 校验 JSON 是否合法
+./json_cmd_lin64 -i config.json -v
+
+# 压缩为单行
+./json_cmd_lin64 -i config.json -c
+
+# 格式化输出（默认2空格缩进）
+./json_cmd_lin64 -i config.json -F
+
+# 格式化输出（4空格缩进）
+./json_cmd_lin64 -i config.json -F -n 4
+
+# 原样输出文件内容
+./json_cmd_lin64 -i config.json -p
+
+# 遍历输出（key 按字典序排序）
+./json_cmd_lin64 -i config.json -s
+
+# 仅输出 key 匹配 "d*" 的条目
+./json_cmd_lin64 -i config.json -k "d*"
+
+# 仅输出 key 匹配 "d*" 的条目，并格式化
+./json_cmd_lin64 -i config.json -k "d*" -F
+
+# 压缩输出，key 排序，仅匹配 "n?me"
+./json_cmd_lin64 -i config.json -s -k "n?me" -c
 ```
 
 ## 运行环境
@@ -174,7 +211,14 @@ wine build/win64/json_cmd_win64.exe -i config.json
 
 | 参数 | 说明 |
 |------|------|
-| `-i` | 指定要解析的 JSON 文件路径（必填） |
+| `-i` / `-f` | 指定要解析的 JSON 文件路径（必填，两者等价） |
+| `-v` | 校验模式，仅检查 JSON 合法性 |
+| `-c` | 压缩模式，输出单行紧凑 JSON |
+| `-F` | 格式化模式，按缩进重新输出 |
+| `-n N` | 每级缩进空格数（默认 2，需配合 `-F`） |
+| `-p` | 原样输出，直接打印文件原始内容 |
+| `-s` | 输出时对对象 key 按字典序排序 |
+| `-k pattern` | key 过滤模式，支持通配符 `*`（任意多字符）和 `?`（单个字符） |
 
 ### 退出码
 
@@ -184,6 +228,9 @@ wine build/win64/json_cmd_win64.exe -i config.json
 | 1 | 参数缺失或格式错误 |
 | 2 | 无法读取输入文件 |
 | 3 | JSON 解析失败 |
+| 4 | 校验失败 |
+| 5 | 压缩失败 |
+| 6 | 格式化失败 |
 
 ## 下载发行版
 

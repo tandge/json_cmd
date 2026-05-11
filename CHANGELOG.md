@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-05-11
+
+### Added
+
+#### 校验模式 (`-v`)
+
+- 新增 `-v` 参数，仅对 JSON 文件做合法性检查，不遍历输出
+- 校验通过输出 `JSON validation passed.`
+- 校验失败输出行号、列号、错误类型
+
+#### 压缩模式 (`-c`)
+
+- 新增 `-c` 参数，将 JSON 文件压缩为单行紧凑格式
+- 去除所有多余空白（空格、换行、缩进），保留语义不变
+
+#### 格式化模式 (`-F` / `-n`)
+
+- 新增 `-F` 参数，将 JSON 压缩后重新按缩进格式化输出
+- 新增 `-n N` 参数，指定每级缩进的空格数（默认 2，需配合 `-F`）
+
+#### 原样输出 (`-p`)
+
+- 新增 `-p` 参数，将 JSON 文件内容原样输出到控制台，不解析不格式化
+
+#### key 排序 (`-s`)
+
+- 新增 `-s` 参数，输出时对 JSON 对象的 key 按字典序排序（参考 jq `--sort-keys`）
+- 可与 `-c` / `-F` / 默认遍历模式配合使用
+
+#### key 过滤 (`-k`)
+
+- 新增 `-k pattern` 参数，按通配符模式筛选 key，仅输出匹配的条目
+- `*` 匹配任意多字符，`?` 匹配任意单个字符
+- 匹配的 key 保留完整子树
+- 可与 `-c` / `-F` / `-s` / 默认遍历模式配合使用
+
+#### 参数兼容
+
+- `-i` 与 `-f` 均可指定输入 JSON 文件，行为完全等价（兼容 v0.1.0 的 `-i` 用法）
+
+### Changed
+
+- 退出码扩展：新增 4（校验失败）、5（压缩失败）、6（格式化失败）
+
+[0.3.0]: https://github.com/tandge/json_cmd_tool/releases/tag/v0.3.0
+
 ## [0.2.0] - 2026-05-08
 
 ### Added
