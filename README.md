@@ -9,6 +9,8 @@
 
 json_cmd_tool 是一个轻量级命令行 JSON 处理工具，支持 Linux / Windows 跨平台编译与运行。
 
+🌐 **在线版**：[https://tandge.github.io/json_cmd/](https://tandge.github.io/json_cmd/) — Linux、macOS、Windows、iOS、Android 均可通过浏览器直接访问使用，无需安装。
+
 将指定 JSON 文件中的所有叶节点以 `路径 = 值` 的形式打印输出，方便快速查看和检索 JSON 配置内容。核心功能：
 
 - 递归遍历 JSON 对象和数组，输出所有叶子节点的完整路径与值
@@ -317,6 +319,8 @@ MIT License
 ## Introduction
 
 json_cmd_tool is a lightweight command-line JSON processing tool that supports cross-platform compilation and execution on Linux / Windows.
+
+🌐 **Online Version**: [https://tandge.github.io/json_cmd/](https://tandge.github.io/json_cmd/) — Accessible directly via browser on Linux, macOS, Windows, iOS, and Android. No installation required.
 
 It prints all leaf nodes of a specified JSON file in the format `path = value`, making it easy to quickly view and search JSON configuration content. Core features:
 
