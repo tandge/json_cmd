@@ -1,6 +1,9 @@
 # json_cmd_tool
 
-**Author:** 葛宁 \<tandge@gmail.com\>
+**Author:** 葛宁 (Ning Ge) \<tandge@gmail.com\>
+
+<details open>
+<summary>中文 / 点击切换英文</summary>
 
 ## 简介
 
@@ -305,3 +308,314 @@ json_cmd_tool/
 ## 许可证
 
 MIT License
+
+</details>
+
+<details>
+<summary>English / Click for Chinese</summary>
+
+## Introduction
+
+json_cmd_tool is a lightweight command-line JSON processing tool that supports cross-platform compilation and execution on Linux / Windows.
+
+It prints all leaf nodes of a specified JSON file in the format `path = value`, making it easy to quickly view and search JSON configuration content. Core features:
+
+- Recursively traverse JSON objects and arrays, outputting the full path and value of all leaf nodes
+- Support all JSON data types: strings, numbers (integer/float), booleans, null
+- Array indices use `[n]` syntax, object paths use `.` separator for clear hierarchy
+- Integers are output without decimal points, floating-point numbers automatically have trailing zeros removed
+- Parse errors output line and column number information
+- Validation mode: only check JSON validity
+- Minify mode: output single-line compact JSON
+- Format mode: reformat output with indentation
+- Raw output: print the file's original content directly
+- Key sorting: sort object keys in lexicographic order during output
+- Key filtering: support wildcards `*` and `?` for pattern-based key filtering
+
+### Example
+
+Given the following `config.json`:
+
+```json
+{
+    "name": "app",
+    "version": 2.1,
+    "debug": false,
+    "database": {
+        "host": "localhost",
+        "ports": [8080, 8081]
+    }
+}
+```
+
+Output after running:
+
+```
+name = "app"
+version = 2.1
+debug = false
+database.host = "localhost"
+database.ports[0] = 8080
+database.ports[1] = 8081
+```
+
+More usage examples:
+
+```bash
+# Validate JSON
+./json_cmd_lin64 -i config.json -v
+
+# Minify to single line
+./json_cmd_lin64 -i config.json -c
+
+# Format output (default 2-space indentation)
+./json_cmd_lin64 -i config.json -F
+
+# Format output (4-space indentation)
+./json_cmd_lin64 -i config.json -F -n 4
+
+# Raw output of file content
+./json_cmd_lin64 -i config.json -p
+
+# Traverse output (keys sorted lexicographically)
+./json_cmd_lin64 -i config.json -s
+
+# Only output entries where key matches "d*"
+./json_cmd_lin64 -i config.json -k "d*"
+
+# Only output entries where key matches "d*", with formatting
+./json_cmd_lin64 -i config.json -k "d*" -F
+
+# Minified output, keys sorted, only match "n?me"
+./json_cmd_lin64 -i config.json -s -k "n?me" -c
+```
+
+## Runtime Environment
+
+### Linux
+
+- x86_64 architecture, glibc 2.17 and above
+- No additional runtime dependencies
+
+### Windows
+
+- Windows 7 and above (64-bit)
+- The Windows version is compiled with static linking, and does not depend on runtime libraries such as `libgcc_s_seh-1.dll`, `libstdc++-6.dll`, `libwinpthread-1.dll`, etc. It can run standalone
+
+## Build
+
+### Build Environment Requirements
+
+| Tool | Minimum Version | Purpose |
+|------|-----------------|---------|
+| CMake | ≥ 3.14 | Build system |
+| GCC / Clang | C++17 support | Linux native compilation |
+| MinGW-w64 | `x86_64-w64-mingw32-g++-posix` | Windows cross-compilation |
+| Wine | Any version (optional) | Run Windows unit tests on Linux |
+
+The project includes the `json.hpp` single-header JSON parsing library with no other external dependencies. The unit testing framework Google Test is automatically downloaded via CMake FetchContent.
+
+### Using the Build Script (Recommended)
+
+Specify the build platform via arguments:
+
+```bash
+./build.sh            # Build both lin64 + win64
+./build.sh lin64      # Build Linux 64-bit only
+./build.sh win64      # Build Windows 64-bit only
+```
+
+Script execution flow: clean old builds → cmake configure + compile + unit test per platform → summary output.
+
+### Linux Build
+
+Using the build script:
+
+```bash
+./build.sh lin64
+```
+
+Manual build:
+
+```bash
+mkdir build/lin64 && cd build/lin64
+cmake ../.. -Darch=lin64 -DCMAKE_BUILD_TYPE=Release
+cmake --build . --parallel
+ctest --output-on-failure
+```
+
+Build artifacts:
+
+| File | Description |
+|------|-------------|
+| `build/lin64/json_cmd_lin64` | Main program |
+| `build/lin64/test_json_lin64` | Unit tests |
+
+### Windows Build
+
+#### Cross-compilation (Linux → Windows, Recommended)
+
+Use MinGW-w64 on a Linux host to cross-compile and generate Windows 64-bit executables.
+
+Using the build script:
+
+```bash
+./build.sh win64
+```
+
+Manual build:
+
+```bash
+mkdir build/win64 && cd build/win64
+cmake ../.. -Darch=win64 \
+    -DCMAKE_TOOLCHAIN_FILE=../toolchain-mingw64.cmake \
+    -DCMAKE_BUILD_TYPE=Release
+cmake --build . --parallel
+ctest --output-on-failure   # Requires wine
+```
+
+Build artifacts:
+
+| File | Description |
+|------|-------------|
+| `build/win64/json_cmd_win64.exe` | Main program |
+| `build/win64/test_json_win64.exe` | Unit tests |
+
+#### MinGW Native Build (On Windows)
+
+Compile directly on Windows using MinGW-w64:
+
+```bat
+mkdir build && cd build
+cmake .. -G "MinGW Makefiles" -Darch=win64 -DCMAKE_BUILD_TYPE=Release
+cmake --build . --parallel
+```
+
+> **Note**: This method is not tested in CI. If you encounter issues, it is recommended to use Linux cross-compilation.
+
+## Usage
+
+### Linux
+
+```bash
+./json_cmd_lin64 -i <json_file>
+```
+
+Example:
+
+```bash
+./build/lin64/json_cmd_lin64 -i config.json
+```
+
+### Windows
+
+```cmd
+json_cmd_win64.exe -i <json_file>
+```
+
+Run via wine on Linux:
+
+```bash
+wine build/win64/json_cmd_win64.exe -i config.json
+```
+
+### Parameter Reference
+
+| Parameter | Description |
+|-----------|-------------|
+| `-i` / `-f` | Specify the JSON file path to parse (required, both are equivalent) |
+| `-v` | Validation mode, only check JSON validity |
+| `-c` | Minify mode, output single-line compact JSON |
+| `-F` | Format mode, reformat output with indentation |
+| `-n N` | Number of spaces per indentation level (default 2, requires `-F`) |
+| `-p` | Raw output, print the file's original content directly |
+| `-s` | Sort object keys in lexicographic order during output |
+| `-k pattern` | Key filter mode, supports wildcards `*` (any number of characters) and `?` (single character) |
+
+### Exit Codes
+
+| Exit Code | Meaning |
+|-----------|---------|
+| 0 | Success |
+| 1 | Missing or malformed arguments |
+| 2 | Cannot read input file |
+| 3 | JSON parse failure |
+| 4 | Validation failure |
+| 5 | Minification failure |
+| 6 | Formatting failure |
+
+## Download Releases
+
+Pre-compiled binary packages for Linux / Windows are available on the [Releases](https://github.com/tandge/json_cmd_tool/releases) page.
+
+| Platform | File |
+|----------|------|
+| Linux 64-bit | `json_cmd_lin64` |
+| Windows 64-bit | `json_cmd_win64.exe` |
+
+After downloading, grant execute permission and run directly — no installation required.
+
+## FAQ
+
+### Linux FAQ
+
+**Q: Getting `Permission denied` when running**
+
+A: The downloaded binary needs execute permission:
+
+```bash
+chmod +x json_cmd_lin64
+```
+
+**Q: Getting `/lib64/libc.so.6: version 'GLIBC_2.xx' not found` when running**
+
+A: The binary was compiled on a newer Linux with a glibc version higher than your system. Please upgrade your system or compile from source on the target system.
+
+**Q: Cannot find a C++17 compiler when building**
+
+A: Confirm GCC version ≥ 7:
+
+```bash
+g++ --version
+```
+
+GCC shipped with Ubuntu 18.04+ / CentOS 8+ meets this requirement.
+
+### Windows FAQ
+
+**Q: Double-clicking .exe flashes and closes immediately**
+
+A: This is a command-line tool that needs to be run via `cmd` or PowerShell. Open a terminal and execute:
+
+```cmd
+json_cmd_win64.exe -i <json_file>
+```
+
+**Q: Getting missing DLL errors when running**
+
+A: The Windows version of this project uses static linking, so this should not normally happen. If you compiled from source without enabling static linking, you may be missing MinGW runtime DLLs. It is recommended to recompile using the project's provided `toolchain-mingw64.cmake`, or download the pre-compiled release directly.
+
+**Q: Running .exe with wine gives error `Library libwinpthread-1.dll not found`**
+
+A: Static linking was not enabled during cross-compilation. Confirm that your CMake configuration includes the `-Darch=win64` parameter — CMakeLists.txt will automatically add the `-static` related flags.
+
+## Project Structure
+
+```
+json_cmd_tool/
+├── CMakeLists.txt             # CMake build configuration (dual-platform, -Darch=lin64/win64)
+├── toolchain-mingw64.cmake    # MinGW-w64 cross-compilation toolchain file
+├── build.sh                   # One-click build script
+├── config.json                # Sample JSON configuration file
+├── json.hpp                   # Single-header JSON parsing library
+├── main.cpp                   # Main program source code
+├── test_json.cpp              # Unit test source code
+├── CHANGELOG.md               # Changelog
+└── README.md                  # Project documentation
+```
+
+## License
+
+MIT License
+
+</details>
