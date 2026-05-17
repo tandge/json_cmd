@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>bingningtech JSON Formatter/Validator</title>
+<style>
+  :root {
+    --bg:       #F5F5F7;
+    --card:     #FFFFFF;
+    --text:     #1D1D1F;
+    --text2:    #86868B;
+    --accent:   #0071E3;
+    --accent-h: #0077ED;
+    --danger:   #FF3B30;
+    --success:  #34C759;
+    --border:   #D2D2D7;
+    --gutter:   #F0F0F3;
+    --ln:       #A0A0A8;
+    --radius:   12px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+                 "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh; padding: 0;
+  }
+  /* ---------- Header ---------- */
+  .header {
+    text-align: center; padding: 40px 24px 8px;
+  }
+  .header h1 {
+    font-size: 2rem; font-weight: 700; letter-spacing: -.02em;
+    background: linear-gradient(135deg, #1D1D1F 0%, #515154 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .header p { font-size: .95rem; color: var(--text2); margin-top: 6px; }
+
+  /* ---------- Layout ---------- */
+  .container { max-width: 1120px; margin: 0 auto; padding: 24px 24px 48px; }
+
+  /* ---------- Editor panel ---------- */
+  .editor-card {
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06);
+    overflow: hidden; display: flex; flex-direction: column;
+  }
+  .editor-label {
+    font-size: .8rem; font-weight: 600; color: var(--text2);
+    padding: 12px 16px 0; text-transform: uppercase; letter-spacing: .04em;
+  }
+  .editor-wrap {
+    display: flex; flex: 1; min-height: 0;
+  }
+  .line-numbers {
+    width: 48px; flex-shrink: 0; padding: 12px 0;
+    background: var(--gutter); border-right: 1px solid var(--border);
+    font: 13px/1.55 "SF Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    color: var(--ln); text-align: right; user-select: none;
+    overflow: hidden;
+  }
+  .line-numbers div { padding-right: 10px; }
+  .line-numbers div.err-line { color: var(--danger); font-weight: 700; }
+
+  /* editor-inner: contains textarea + error overlay */
+  .editor-inner {
+    position: relative; flex: 1; overflow: hidden;
+  }
+  .error-highlight {
+    position: absolute; left: 0; right: 0;
+    pointer-events: none; z-index: 1;
+    display: none;
+    background: rgba(255, 59, 48, 0.12);
+    border-left: 3px solid var(--danger);
+  }
+  textarea.code {
+    width: 100%; height: 100%;
+    border: none; outline: none; resize: none;
+    font: 13px/1.55 "SF Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    padding: 12px 16px; color: var(--text);
+    position: relative; z-index: 2;
+    background: var(--card);
+  }
+  textarea.code.has-error { background: transparent; }
+
+  /* ---------- Params sidebar ---------- */
+  .workspace { display: flex; gap: 20px; margin-bottom: 20px; }
+  .editor-col { flex: 1; display: flex; flex-direction: column; }
+  .editor-col .editor-card { min-height: 380px; }
+  .params-col {
+    width: 240px; flex-shrink: 0;
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06);
+    padding: 20px; display: flex; flex-direction: column; gap: 18px;
+    align-self: flex-start;
+  }
+  .params-title {
+    font-size: .78rem; font-weight: 700; color: var(--text2);
+    text-transform: uppercase; letter-spacing: .06em;
+  }
+  .param-group { display: flex; flex-direction: column; gap: 12px; }
+  .param-item { display: flex; align-items: center; gap: 8px; }
+  .param-item input[type="checkbox"] {
+    width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer;
+  }
+  .param-item .param-label {
+    font-size: .9rem; font-weight: 500; cursor: pointer; color: var(--text);
+  }
+  .param-item .param-hint {
+    font-size: .72rem; color: var(--text2); font-family: "SF Mono", Menlo, monospace;
+  }
+  .sub-input {
+    margin-left: 26px; display: none; flex-direction: column; gap: 4px;
+  }
+  .sub-input.active { display: flex; }
+  .sub-input input {
+    padding: 6px 10px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: .85rem; outline: none; transition: border .2s;
+    font-family: "SF Mono", Menlo, monospace;
+  }
+  .sub-input input:focus { border-color: var(--accent); }
+  .sub-input input:disabled { background: #F0F0F3; cursor: not-allowed; }
+  .sub-input .sub-label { font-size: .75rem; color: var(--text2); }
+
+  /* ---------- Buttons ---------- */
+  .btn-row { display: flex; gap: 12px; margin-bottom: 20px; }
+  .btn {
+    flex: 1; padding: 12px 0; font-size: .95rem; font-weight: 600;
+    border: none; border-radius: 10px; cursor: pointer; transition: all .15s;
+  }
+  .btn-reset { background: #E8E8ED; color: var(--text); }
+  .btn-reset:hover { background: #DCDCE1; }
+  .btn-submit { background: var(--accent); color: #fff; }
+  .btn-submit:hover { background: var(--accent-h); }
+  .btn-submit:disabled { background: #A8C7E8; cursor: not-allowed; }
+
+  /* ---------- Output ---------- */
+  .output-card {
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.06);
+    overflow: hidden;
+  }
+  .output-card textarea {
+    width: 100%; min-height: 320px; border: none; outline: none; resize: vertical;
+    font: 13px/1.55 "SF Mono", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    padding: 12px 16px; background: transparent; color: var(--text);
+  }
+
+  /* ---------- Status ---------- */
+  .status {
+    text-align: center; font-size: .82rem; color: var(--text2);
+    margin-top: 12px; min-height: 1.4em; transition: color .2s;
+  }
+  .status.error { color: var(--danger); font-weight: 500; }
+  .status.ok    { color: var(--success); font-weight: 500; }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 768px) {
+    .workspace { flex-direction: column; }
+    .params-col { width: 100%; flex-direction: row; flex-wrap: wrap; gap: 12px; }
+    .params-title { width: 100%; }
+    .param-group { flex-direction: row; flex-wrap: wrap; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>bingningtech JSON Formatter/Validator</h1>
+  <p>Sort · Format · Compact · Filter · Validate</p>
+</div>
+
+<div class="container">
+  <div class="workspace">
+    <!-- Input editor with line numbers -->
+    <div class="editor-col">
+      <div class="editor-card">
+        <div class="editor-label">INPUT</div>
+        <div class="editor-wrap">
+          <div class="line-numbers" id="lineNums"><div>1</div></div>
+          <div class="editor-inner">
+            <div class="error-highlight" id="errorHighlight"></div>
+            <textarea class="code" id="input" spellcheck="false"
+                      placeholder="Paste your JSON here..."></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parameters -->
+    <div class="params-col">
+      <div class="params-title">Parameters</div>
+      <div class="param-group">
+        <div>
+          <div class="param-item">
+            <input type="checkbox" id="chkSort">
+            <label class="param-label" for="chkSort">排序</label>
+            <span class="param-hint">-s</span>
+          </div>
+        </div>
+        <div>
+          <div class="param-item">
+            <input type="checkbox" id="chkFormat">
+            <label class="param-label" for="chkFormat">格式化</label>
+            <span class="param-hint">-F -n</span>
+          </div>
+          <div class="sub-input" id="subFormat">
+            <span class="sub-label">缩进空格数</span>
+            <input type="number" id="numIndent" value="2" min="1" max="16" disabled>
+          </div>
+        </div>
+        <div>
+          <div class="param-item">
+            <input type="checkbox" id="chkCompact">
+            <label class="param-label" for="chkCompact">压缩</label>
+            <span class="param-hint">-c</span>
+          </div>
+        </div>
+        <div>
+          <div class="param-item">
+            <input type="checkbox" id="chkFilter">
+            <label class="param-label" for="chkFilter">过滤</label>
+            <span class="param-hint">-k</span>
+          </div>
+          <div class="sub-input" id="subFilter">
+            <span class="sub-label">Key pattern (支持 * ?)</span>
+            <input type="text" id="txtKey" placeholder="key_name" disabled>
+          </div>
+        </div>
+        <div>
+          <div class="param-item">
+            <input type="checkbox" id="chkValidate">
+            <label class="param-label" for="chkValidate">校验</label>
+            <span class="param-hint">-v</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="btn-row">
+    <button class="btn btn-reset" id="btnReset">重置</button>
+    <button class="btn btn-submit" id="btnSubmit" disabled>提交</button>
+  </div>
+
+  <!-- Output -->
+  <div class="output-card">
+    <div class="editor-label">OUTPUT</div>
+    <textarea id="output" readonly placeholder="Result will appear here..."></textarea>
+  </div>
+  <div class="status" id="status"></div>
+</div>
+
+<script src="json_cmd.js"></script>
+<script>
+(function() {
+  /* --- DOM refs --- */
+  var inputBox       = document.getElementById('input');
+  var outputBox      = document.getElementById('output');
+  var lineNums       = document.getElementById('lineNums');
+  var errorHighlight = document.getElementById('errorHighlight');
+  var chkSort        = document.getElementById('chkSort');
+  var chkFormat      = document.getElementById('chkFormat');
+  var chkCompact     = document.getElementById('chkCompact');
+  var chkFilter      = document.getElementById('chkFilter');
+  var chkValidate    = document.getElementById('chkValidate');
+  var numIndent      = document.getElementById('numIndent');
+  var txtKey         = document.getElementById('txtKey');
+  var subFormat      = document.getElementById('subFormat');
+  var subFilter      = document.getElementById('subFilter');
+  var btnReset       = document.getElementById('btnReset');
+  var btnSubmit      = document.getElementById('btnSubmit');
+  var statusBar      = document.getElementById('status');
+
+  /* --- Error highlight state --- */
+  var currentErrorLine = 0;
+
+  /* --- Line numbers --- */
+  function updateLineNumbers() {
+    var lines = inputBox.value.split('\n').length;
+    var html = '';
+    for (var i = 1; i <= lines; i++) {
+      var cls = (i === currentErrorLine) ? ' class="err-line"' : '';
+      html += '<div' + cls + '>' + i + '</div>';
+    }
+    lineNums.innerHTML = html;
+  }
+
+  /* --- Error highlight positioning --- */
+  function positionHighlight() {
+    if (currentErrorLine <= 0) return;
+    var cs = getComputedStyle(inputBox);
+    var lineHeight = parseFloat(cs.lineHeight);
+    var paddingTop = parseFloat(cs.paddingTop);
+    var top = paddingTop + (currentErrorLine - 1) * lineHeight - inputBox.scrollTop;
+    errorHighlight.style.top = top + 'px';
+    errorHighlight.style.height = lineHeight + 'px';
+  }
+
+  function showErrorHighlight(line, col) {
+    currentErrorLine = line;
+    inputBox.classList.add('has-error');
+    positionHighlight();
+    errorHighlight.style.display = 'block';
+    updateLineNumbers();
+
+    /* Move cursor to error position */
+    var offset = 0;
+    var textLines = inputBox.value.split('\n');
+    for (var i = 0; i < line - 1 && i < textLines.length; i++) {
+      offset += textLines[i].length + 1;
+    }
+    offset += col - 1;
+    offset = Math.min(offset, inputBox.value.length);
+
+    inputBox.focus();
+    inputBox.setSelectionRange(offset, Math.min(offset + 1, inputBox.value.length));
+  }
+
+  function clearErrorHighlight() {
+    currentErrorLine = 0;
+    errorHighlight.style.display = 'none';
+    inputBox.classList.remove('has-error');
+    updateLineNumbers();
+  }
+
+  /* --- Scroll sync --- */
+  inputBox.addEventListener('scroll', function() {
+    lineNums.scrollTop = inputBox.scrollTop;
+    if (currentErrorLine > 0) positionHighlight();
+  });
+
+  inputBox.addEventListener('input', function() {
+    if (currentErrorLine > 0) clearErrorHighlight();
+    updateLineNumbers();
+  });
+  updateLineNumbers();
+
+  /* --- Checkbox mutual exclusion: format vs compact --- */
+  chkFormat.addEventListener('change', function() {
+    numIndent.disabled = !this.checked;
+    subFormat.classList.toggle('active', this.checked);
+    if (this.checked) {
+      chkCompact.checked = false;
+    }
+  });
+  chkCompact.addEventListener('change', function() {
+    if (this.checked) {
+      chkFormat.checked = false;
+      numIndent.disabled = true;
+      subFormat.classList.remove('active');
+    }
+  });
+
+  /* --- Filter sub-input --- */
+  chkFilter.addEventListener('change', function() {
+    txtKey.disabled = !this.checked;
+    subFilter.classList.toggle('active', this.checked);
+  });
+
+  /* --- Only digits in indent --- */
+  numIndent.addEventListener('input', function() {
+    this.value = this.value.replace(/[^0-9]/g, '');
+    if (this.value === '' || parseInt(this.value) < 1) this.value = '2';
+  });
+
+  /* --- Reset --- */
+  btnReset.addEventListener('click', function() {
+    inputBox.value = '';
+    outputBox.value = '';
+    statusBar.textContent = '';
+    statusBar.className = 'status';
+    clearErrorHighlight();
+    updateLineNumbers();
+  });
+
+  /* --- Load WASM --- */
+  var Module = null;
+  JsonCmd().then(function(mod) {
+    Module = mod;
+    btnSubmit.disabled = false;
+    statusBar.textContent = 'Ready';
+    statusBar.className = 'status ok';
+  }).catch(function(err) {
+    statusBar.textContent = 'WASM load failed: ' + err.message;
+    statusBar.className = 'status error';
+  });
+
+  /* --- Parse error line/col from result string --- */
+  function parseErrorPos(result) {
+    var m = result.match(/line (\d+), col (\d+)/);
+    if (!m) return null;
+    return { line: parseInt(m[1]), col: parseInt(m[2]) };
+  }
+
+  /* --- Submit --- */
+  btnSubmit.addEventListener('click', function() {
+    if (!Module) return;
+    var content = inputBox.value;
+    if (!content.trim()) {
+      statusBar.textContent = 'Please paste JSON input first.';
+      statusBar.className = 'status error';
+      return;
+    }
+    var sortKey      = chkSort.checked;
+    var flagFormat   = chkFormat.checked;
+    var flagCompact  = chkCompact.checked;
+    var indentSpaces = flagFormat ? (parseInt(numIndent.value) || 2) : 2;
+    var keyFilter    = chkFilter.checked ? txtKey.value : '';
+    var flagValidate = chkValidate.checked;
+
+    try {
+      var result = Module.process_json(content, sortKey, flagFormat, flagCompact, indentSpaces, keyFilter, flagValidate);
+      outputBox.value = result;
+      if (result.indexOf('Error:') === 0) {
+        var pos = parseErrorPos(result);
+        if (pos) {
+          showErrorHighlight(pos.line, pos.col);
+          statusBar.textContent = 'Error at line ' + pos.line + ', col ' + pos.col;
+        } else {
+          statusBar.textContent = 'Processing failed';
+        }
+        statusBar.className = 'status error';
+      } else {
+        clearErrorHighlight();
+        if (flagValidate) {
+          statusBar.textContent = 'Validation passed';
+        } else {
+          statusBar.textContent = 'Done';
+        }
+        statusBar.className = 'status ok';
+      }
+    } catch (e) {
+      outputBox.value = '';
+      statusBar.textContent = 'Exception: ' + e.message;
+      statusBar.className = 'status error';
+    }
+  });
+})();
+</script>
+</body>
+</html>

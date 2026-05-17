@@ -332,6 +332,54 @@ static int validate(const std::string& content) {
     }
 }
 
+/**
+ * @brief 处理 JSON 字符串，支持排序、格式化、压缩、过滤、校验
+ *
+ * 复用已有的解析、过滤、排序、格式化逻辑，结果以字符串返回，
+ * 供命令行和 WASM 环境共用。
+ *
+ * @param content       JSON 文本
+ * @param sort_key      是否对对象 key 按字典序排序 (-s)
+ * @param flag_format   是否格式化输出 (-F)
+ * @param flag_compact  是否压缩为单行 (-c)
+ * @param indent_spaces 每级缩进空格数 (-n，默认 2)
+ * @param key_filter    key 过滤通配符模式 (-k，空串不过滤)
+ * @param flag_validate 是否仅校验 (-v)
+ * @return 处理结果字符串
+ */
+std::string process_json(const std::string& content,
+                         bool sort_key,
+                         bool flag_format,
+                         bool flag_compact,
+                         int indent_spaces,
+                         const std::string& key_filter,
+                         bool flag_validate) {
+    try {
+        if (flag_validate) {
+            json::parse(content);
+            return "JSON validation passed.";
+        }
+        json::Value root = json::parse(content);
+        filterByKey(root, key_filter);
+        if (sort_key) sortObjectKeys(root);
+        std::ostringstream oss;
+        if (flag_format) {
+            if (indent_spaces <= 0) indent_spaces = 2;
+            dumpPretty(root, indent_spaces, 0, oss, sort_key);
+        } else {
+            // 默认或 -c 均输出紧凑格式
+            oss << root.dump();
+        }
+        return oss.str();
+    } catch (const json::ParseError& e) {
+        return "Error: [line " + std::to_string(e.line()) +
+               ", col " + std::to_string(e.column()) + "] " + e.what();
+    } catch (const std::exception& e) {
+        return std::string("Error: ") + e.what();
+    }
+}
+
+#ifndef __EMSCRIPTEN__
 int main(int argc, char* argv[]) {
     // 解析命令行参数
     std::string input_file;
@@ -420,3 +468,11 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+#endif  // __EMSCRIPTEN__
+
+#ifdef __EMSCRIPTEN__
+#include <emscripten/bind.h>
+EMSCRIPTEN_BINDINGS(json_cmd) {
+    emscripten::function("process_json", &process_json);
+}
+#endif  // __EMSCRIPTEN__
