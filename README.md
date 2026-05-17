@@ -2,8 +2,8 @@
 
 **Author:** 葛宁 (Ning Ge) \<tandge@gmail.com\>
 
-<details open>
-<summary>中文 / 点击切换英文</summary>
+<details>
+<summary>中文 / Click for Chinese</summary>
 
 ## 简介
 
@@ -311,8 +311,8 @@ MIT License
 
 </details>
 
-<details>
-<summary>English / Click for Chinese</summary>
+<details open>
+<summary>English / 点击切换中文</summary>
 
 ## Introduction
 

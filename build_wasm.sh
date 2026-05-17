@@ -3,7 +3,7 @@
 set -e
 
 PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
-OUTPUT_DIR="${PROJECT_ROOT}/web"
+OUTPUT_DIR="${PROJECT_ROOT}/docs"
 
 # Source emsdk if not already in PATH
 if ! command -v emcc &>/dev/null; then

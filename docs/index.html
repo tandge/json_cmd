@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -36,6 +36,24 @@
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   }
   .header p { font-size: .95rem; color: var(--text2); margin-top: 6px; }
+
+  /* ---------- Language Switcher ---------- */
+  .lang-switcher {
+    display: flex; justify-content: center; gap: 0; margin-top: 10px;
+  }
+  .lang-tab {
+    padding: 5px 18px; font-size: .82rem; font-weight: 600;
+    border: 1px solid var(--border); background: var(--card);
+    color: var(--text2); cursor: pointer; transition: all .15s;
+    outline: none;
+  }
+  .lang-tab:first-child { border-radius: 8px 0 0 8px; }
+  .lang-tab:last-child  { border-radius: 0 8px 8px 0; }
+  .lang-tab:not(:first-child) { border-left: none; }
+  .lang-tab.active {
+    background: var(--accent); color: #fff; border-color: var(--accent);
+  }
+  .lang-tab.active + .lang-tab { border-left: none; }
 
   /* ---------- Layout ---------- */
   .container { max-width: 1120px; margin: 0 auto; padding: 24px 24px 48px; }
@@ -168,7 +186,11 @@
 
 <div class="header">
   <h1>bingningtech JSON Formatter/Validator</h1>
-  <p>Sort · Format · Compact · Filter · Validate</p>
+  <p data-i18n="subtitle">Sort · Format · Compact · Filter · Validate</p>
+  <div class="lang-switcher">
+    <button class="lang-tab active" data-lang="en">English</button>
+    <button class="lang-tab" data-lang="zh">中文</button>
+  </div>
 </div>
 
 <div class="container">
@@ -176,13 +198,13 @@
     <!-- Input editor with line numbers -->
     <div class="editor-col">
       <div class="editor-card">
-        <div class="editor-label">INPUT</div>
+        <div class="editor-label" data-i18n="inputLabel">INPUT</div>
         <div class="editor-wrap">
           <div class="line-numbers" id="lineNums"><div>1</div></div>
           <div class="editor-inner">
             <div class="error-highlight" id="errorHighlight"></div>
             <textarea class="code" id="input" spellcheck="false"
-                      placeholder="Paste your JSON here..."></textarea>
+                      placeholder="Paste your JSON here..." data-i18n-placeholder="inputPlaceholder"></textarea>
           </div>
         </div>
       </div>
@@ -190,48 +212,48 @@
 
     <!-- Parameters -->
     <div class="params-col">
-      <div class="params-title">Parameters</div>
+      <div class="params-title" data-i18n="paramsTitle">Parameters</div>
       <div class="param-group">
         <div>
           <div class="param-item">
             <input type="checkbox" id="chkSort">
-            <label class="param-label" for="chkSort">排序</label>
+            <label class="param-label" for="chkSort" data-i18n="sort">Sort</label>
             <span class="param-hint">-s</span>
           </div>
         </div>
         <div>
           <div class="param-item">
             <input type="checkbox" id="chkFormat">
-            <label class="param-label" for="chkFormat">格式化</label>
+            <label class="param-label" for="chkFormat" data-i18n="format">Format</label>
             <span class="param-hint">-F -n</span>
           </div>
           <div class="sub-input" id="subFormat">
-            <span class="sub-label">缩进空格数</span>
+            <span class="sub-label" data-i18n="indentSpaces">Indent spaces</span>
             <input type="number" id="numIndent" value="2" min="1" max="16" disabled>
           </div>
         </div>
         <div>
           <div class="param-item">
             <input type="checkbox" id="chkCompact">
-            <label class="param-label" for="chkCompact">压缩</label>
+            <label class="param-label" for="chkCompact" data-i18n="compact">Compact</label>
             <span class="param-hint">-c</span>
           </div>
         </div>
         <div>
           <div class="param-item">
             <input type="checkbox" id="chkFilter">
-            <label class="param-label" for="chkFilter">过滤</label>
+            <label class="param-label" for="chkFilter" data-i18n="filter">Filter</label>
             <span class="param-hint">-k</span>
           </div>
           <div class="sub-input" id="subFilter">
-            <span class="sub-label">Key pattern (支持 * ?)</span>
+            <span class="sub-label" data-i18n="keyPattern">Key pattern (supports * ?)</span>
             <input type="text" id="txtKey" placeholder="key_name" disabled>
           </div>
         </div>
         <div>
           <div class="param-item">
             <input type="checkbox" id="chkValidate">
-            <label class="param-label" for="chkValidate">校验</label>
+            <label class="param-label" for="chkValidate" data-i18n="validate">Validate</label>
             <span class="param-hint">-v</span>
           </div>
         </div>
@@ -241,14 +263,14 @@
 
   <!-- Buttons -->
   <div class="btn-row">
-    <button class="btn btn-reset" id="btnReset">重置</button>
-    <button class="btn btn-submit" id="btnSubmit" disabled>提交</button>
+    <button class="btn btn-reset" id="btnReset" data-i18n="reset">Reset</button>
+    <button class="btn btn-submit" id="btnSubmit" disabled data-i18n="submit">Submit</button>
   </div>
 
   <!-- Output -->
   <div class="output-card">
-    <div class="editor-label">OUTPUT</div>
-    <textarea id="output" readonly placeholder="Result will appear here..."></textarea>
+    <div class="editor-label" data-i18n="outputLabel">OUTPUT</div>
+    <textarea id="output" readonly placeholder="Result will appear here..." data-i18n-placeholder="outputPlaceholder"></textarea>
   </div>
   <div class="status" id="status"></div>
 </div>
@@ -256,7 +278,100 @@
 <script src="json_cmd.js"></script>
 <script>
 (function() {
-  /* --- DOM refs --- */
+  /* ======================== i18n ======================== */
+  var i18n = {
+    en: {
+      subtitle:        'Sort · Format · Compact · Filter · Validate',
+      paramsTitle:     'Parameters',
+      sort:            'Sort',
+      format:          'Format',
+      indentSpaces:    'Indent spaces',
+      compact:         'Compact',
+      filter:          'Filter',
+      keyPattern:      'Key pattern (supports * ?)',
+      validate:        'Validate',
+      reset:           'Reset',
+      submit:          'Submit',
+      inputLabel:      'INPUT',
+      inputPlaceholder:'Paste your JSON here...',
+      outputLabel:     'OUTPUT',
+      outputPlaceholder:'Result will appear here...',
+      ready:           'Ready',
+      wasmFail:        'WASM load failed: ',
+      pasteFirst:      'Please paste JSON input first.',
+      errorAt:         'Error at line ',
+      processFailed:   'Processing failed',
+      validationPass:  'Validation passed',
+      done:            'Done',
+      exception:       'Exception: '
+    },
+    zh: {
+      subtitle:        '排序 · 格式化 · 压缩 · 过滤 · 校验',
+      paramsTitle:     '参数',
+      sort:            '排序',
+      format:          '格式化',
+      indentSpaces:    '缩进空格数',
+      compact:         '压缩',
+      filter:          '过滤',
+      keyPattern:      'Key 模式（支持 * ?）',
+      validate:        '校验',
+      reset:           '重置',
+      submit:          '提交',
+      inputLabel:      '输入',
+      inputPlaceholder:'在此粘贴 JSON...',
+      outputLabel:     '输出',
+      outputPlaceholder:'结果将显示在这里...',
+      ready:           '就绪',
+      wasmFail:        'WASM 加载失败：',
+      pasteFirst:      '请先粘贴 JSON 输入。',
+      errorAt:         '错误在第 ',
+      processFailed:   '处理失败',
+      validationPass:  '校验通过',
+      done:            '完成',
+      exception:       '异常：'
+    }
+  };
+
+  var currentLang = 'en';
+
+  function applyLang(lang) {
+    currentLang = lang;
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    /* Update text content */
+    var elems = document.querySelectorAll('[data-i18n]');
+    for (var i = 0; i < elems.length; i++) {
+      var key = elems[i].getAttribute('data-i18n');
+      if (i18n[lang][key] !== undefined) elems[i].textContent = i18n[lang][key];
+    }
+    /* Update placeholders */
+    var phElems = document.querySelectorAll('[data-i18n-placeholder]');
+    for (var j = 0; j < phElems.length; j++) {
+      var pk = phElems[j].getAttribute('data-i18n-placeholder');
+      if (i18n[lang][pk] !== undefined) phElems[j].placeholder = i18n[lang][pk];
+    }
+    /* Update tab active state */
+    var tabs = document.querySelectorAll('.lang-tab');
+    for (var t = 0; t < tabs.length; t++) {
+      tabs[t].classList.toggle('active', tabs[t].getAttribute('data-lang') === lang);
+    }
+    /* Re-apply current status text */
+    if (lastStatusKey) {
+      statusBar.textContent = i18n[lang][lastStatusKey] || lastStatusKey;
+      if (lastStatusKey === 'errorAt' && lastStatusExtra) {
+        statusBar.textContent = i18n[lang].errorAt + lastStatusExtra;
+      }
+    }
+  }
+
+  /* Language tab click handlers */
+  var langTabs = document.querySelectorAll('.lang-tab');
+  for (var lt = 0; lt < langTabs.length; lt++) {
+    langTabs[lt].addEventListener('click', function() {
+      applyLang(this.getAttribute('data-lang'));
+    });
+  }
+
+  /* ======================== DOM refs ======================== */
   var inputBox       = document.getElementById('input');
   var outputBox      = document.getElementById('output');
   var lineNums       = document.getElementById('lineNums');
@@ -273,6 +388,20 @@
   var btnReset       = document.getElementById('btnReset');
   var btnSubmit      = document.getElementById('btnSubmit');
   var statusBar      = document.getElementById('status');
+
+  /* --- Status i18n tracking --- */
+  var lastStatusKey   = '';
+  var lastStatusExtra = '';
+
+  function setStatus(key, extra) {
+    lastStatusKey = key;
+    lastStatusExtra = extra || '';
+    if (key === 'errorAt' && extra) {
+      statusBar.textContent = i18n[currentLang].errorAt + extra;
+    } else {
+      statusBar.textContent = i18n[currentLang][key] || key;
+    }
+  }
 
   /* --- Error highlight state --- */
   var currentErrorLine = 0;
@@ -370,6 +499,8 @@
   btnReset.addEventListener('click', function() {
     inputBox.value = '';
     outputBox.value = '';
+    lastStatusKey = '';
+    lastStatusExtra = '';
     statusBar.textContent = '';
     statusBar.className = 'status';
     clearErrorHighlight();
@@ -381,10 +512,11 @@
   JsonCmd().then(function(mod) {
     Module = mod;
     btnSubmit.disabled = false;
-    statusBar.textContent = 'Ready';
+    setStatus('ready');
     statusBar.className = 'status ok';
   }).catch(function(err) {
-    statusBar.textContent = 'WASM load failed: ' + err.message;
+    statusBar.textContent = i18n[currentLang].wasmFail + err.message;
+    lastStatusKey = '';
     statusBar.className = 'status error';
   });
 
@@ -400,7 +532,7 @@
     if (!Module) return;
     var content = inputBox.value;
     if (!content.trim()) {
-      statusBar.textContent = 'Please paste JSON input first.';
+      setStatus('pasteFirst');
       statusBar.className = 'status error';
       return;
     }
@@ -418,23 +550,24 @@
         var pos = parseErrorPos(result);
         if (pos) {
           showErrorHighlight(pos.line, pos.col);
-          statusBar.textContent = 'Error at line ' + pos.line + ', col ' + pos.col;
+          setStatus('errorAt', 'line ' + pos.line + ', col ' + pos.col);
         } else {
-          statusBar.textContent = 'Processing failed';
+          setStatus('processFailed');
         }
         statusBar.className = 'status error';
       } else {
         clearErrorHighlight();
         if (flagValidate) {
-          statusBar.textContent = 'Validation passed';
+          setStatus('validationPass');
         } else {
-          statusBar.textContent = 'Done';
+          setStatus('done');
         }
         statusBar.className = 'status ok';
       }
     } catch (e) {
       outputBox.value = '';
-      statusBar.textContent = 'Exception: ' + e.message;
+      statusBar.textContent = i18n[currentLang].exception + e.message;
+      lastStatusKey = '';
       statusBar.className = 'status error';
     }
   });
