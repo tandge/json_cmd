@@ -32,7 +32,7 @@ json_cmd_tool 是一个轻量级命令行 JSON 处理工具，支持 Linux / Win
 ```json
 {
     "name": "app",
-    "version": 2.1,
+    "version": 1.0,
     "debug": false,
     "database": {
         "host": "localhost",
@@ -45,7 +45,7 @@ json_cmd_tool 是一个轻量级命令行 JSON 处理工具，支持 Linux / Win
 
 ```
 name = "app"
-version = 2.1
+version = 1.0
 debug = false
 database.host = "localhost"
 database.ports[0] = 8080
